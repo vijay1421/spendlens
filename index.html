@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SpendLens">
+<title>SpendLens</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07080f;
+  --surface: #10121c;
+  --surface2: #181b28;
+  --border: #252840;
+  --accent: #7c6af7;
+  --accent2: #f5855a;
+  --accent3: #52e8a0;
+  --text: #eeeef8;
+  --muted: #60607a;
+  --danger: #f76a6a;
+  --warning: #f7c46a;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow-x:hidden; }
+body {
+  font-family:'DM Mono',monospace;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(124,106,247,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 85% 80%, rgba(82,232,160,0.05) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+}
+
+.app { position:relative; z-index:1; max-width:430px; margin:0 auto; padding-bottom:90px; }
+
+/* ── HEADER ── */
+.header {
+  padding:52px 22px 18px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; letter-spacing:-0.3px; }
+.logo em { color:var(--accent); font-style:normal; }
+.month-pill {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:5px 13px;
+  font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase;
+}
+
+/* ── HERO CARD ── */
+.hero {
+  margin:0 14px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:22px; padding:24px;
+  position:relative; overflow:hidden;
+}
+.hero::after {
+  content:'';
+  position:absolute; top:-40px; right:-40px;
+  width:160px; height:160px;
+  background:radial-gradient(circle, rgba(124,106,247,0.14) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero-label { font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+.hero-amount {
+  font-family:'Syne',sans-serif; font-size:44px; font-weight:800; line-height:1;
+  margin-bottom:6px;
+}
+.hero-amount sup { font-size:20px; color:var(--muted); vertical-align:top; margin-top:8px; margin-right:2px; }
+.hero-sub { font-size:11px; color:var(--muted); }
+.hero-sub b { color:var(--accent3); }
+
+/* ── STAT ROW ── */
+.stats {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; margin:0 14px 14px;
+}
+.stat {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:14px 12px; text-align:center;
+}
+.stat-val { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; }
+.stat-label { font-size:9px; color:var(--muted); letter-spacing:0.8px; margin-top:3px; text-transform:uppercase; }
+
+/* ── NAV ── */
+.nav {
+  display:flex; gap:6px; padding:0 14px; margin-bottom:18px; overflow-x:auto;
+  scrollbar-width:none;
+}
+.nav::-webkit-scrollbar { display:none; }
+.nb {
+  flex-shrink:0; padding:9px 16px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; color:var(--muted);
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.3px;
+  cursor:pointer; transition:all 0.18s; white-space:nowrap;
+}
+.nb.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* ── SECTIONS ── */
+.sec { display:none; padding:0 14px; }
+.sec.active { display:block; }
+.sec-title { font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+
+/* ── PENDING BANNER ── */
+.pending-banner {
+  display:none; margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(245,133,90,0.13),rgba(245,133,90,0.04));
+  border:1px solid rgba(245,133,90,0.28); border-radius:16px;
+  padding:14px 16px; cursor:pointer;
+  animation:pulseB 2s ease-in-out infinite;
+}
+@keyframes pulseB {
+  0%,100%{border-color:rgba(245,133,90,0.28)}
+  50%{border-color:rgba(245,133,90,0.55)}
+}
+.pending-banner.show { display:block; }
+.pb-row { display:flex; justify-content:space-between; align-items:center; }
+.pb-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--accent2); }
+.pb-badge {
+  background:var(--accent2); color:#fff;
+  font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px;
+}
+.pb-desc { font-size:11px; color:var(--muted); margin-top:6px; }
+.pb-desc b { color:var(--text); }
+
+/* ── CATEGORY CARDS ── */
+.cat-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:14px 16px; margin-bottom:9px;
+}
+.cc-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
+.cc-left { display:flex; align-items:center; gap:10px; }
+.cc-icon { font-size:20px; }
+.cc-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; }
+.cc-right { text-align:right; }
+.cc-amt { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; }
+.cc-of { font-size:9px; color:var(--muted); margin-top:1px; }
+.pbar { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.pfill { height:100%; border-radius:2px; transition:width 0.7s cubic-bezier(.34,1.56,.64,1); }
+
+/* ── TRANSACTION LIST ── */
+.txn {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 0; border-bottom:1px solid var(--border);
+}
+.txn:last-child { border-bottom:none; }
+.txn-ico {
+  width:42px; height:42px; background:var(--surface2);
+  border-radius:13px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.txn-info { flex:1; min-width:0; }
+.txn-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.txn-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+.txn-badge {
+  display:inline-block; margin-top:4px;
+  font-size:9px; padding:2px 7px; border-radius:8px;
+  background:var(--surface2); color:var(--muted); letter-spacing:0.5px;
+}
+.txn-amt { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--accent2); flex-shrink:0; }
+
+/* ── BUDGET SETTINGS ── */
+.bset {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:14px 16px; margin-bottom:9px;
+  display:flex; align-items:center; gap:12px;
+}
+.bset-ico { font-size:20px; flex-shrink:0; }
+.bset-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; flex:1; }
+.bset-wrap { display:flex; align-items:center; gap:5px; }
+.bset-sym { font-size:12px; color:var(--muted); }
+.bset-inp {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; color:var(--text);
+  font-family:'DM Mono',monospace; font-size:13px;
+  padding:7px 10px; width:95px; text-align:right;
+}
+.bset-inp:focus { outline:none; border-color:var(--accent); }
+
+/* ── MODALS ── */
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.82); backdrop-filter:blur(10px);
+  z-index:200; display:none; align-items:flex-end; justify-content:center;
+}
+.overlay.show { display:flex; }
+.sheet {
+  width:100%; max-width:430px;
+  background:var(--surface); border-radius:24px 24px 0 0;
+  padding:20px 20px 44px;
+  animation:slideUp 0.28s cubic-bezier(.34,1.4,.64,1);
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.handle {
+  width:38px; height:4px; background:var(--border);
+  border-radius:2px; margin:0 auto 20px;
+}
+.sheet-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:3px; }
+.sheet-sub { font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:16px; }
+.sheet-amt { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--accent2); }
+.sheet-merchant { font-size:12px; color:var(--muted); margin-top:2px; margin-bottom:20px; }
+.sheet-bank { font-size:10px; color:var(--accent); background:rgba(124,106,247,0.1); border-radius:8px; padding:3px 9px; display:inline-block; margin-top:4px; }
+
+/* category picker grid */
+.cat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+.cat-opt {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; padding:14px 12px;
+  cursor:pointer; transition:all 0.15s;
+  display:flex; align-items:center; gap:10px;
+}
+.cat-opt:active { border-color:var(--accent); background:rgba(124,106,247,0.1); transform:scale(0.96); }
+.co-icon { font-size:22px; }
+.co-name { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; line-height:1.3; }
+
+/* add form */
+.form-row { margin-bottom:14px; }
+.form-row label { font-size:9px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; display:block; margin-bottom:6px; }
+.finput, .fselect {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:11px; color:var(--text);
+  font-family:'DM Mono',monospace; font-size:14px; padding:12px 14px;
+}
+.finput:focus, .fselect:focus { outline:none; border-color:var(--accent); }
+.fselect { appearance:none; }
+.btn-primary {
+  width:100%; padding:15px; background:var(--accent); border:none;
+  border-radius:14px; color:#fff; font-family:'Syne',sans-serif;
+  font-size:15px; font-weight:700; cursor:pointer; transition:opacity 0.15s;
+}
+.btn-primary:active { opacity:0.8; }
+.btn-ghost {
+  width:100%; padding:13px; background:transparent;
+  border:1px solid var(--border); border-radius:14px;
+  color:var(--muted); font-family:'DM Mono',monospace;
+  font-size:13px; cursor:pointer; margin-top:9px;
+}
+.btn-save {
+  width:100%; padding:14px; background:var(--accent3); border:none;
+  border-radius:14px; color:var(--bg); font-family:'Syne',sans-serif;
+  font-size:14px; font-weight:700; cursor:pointer; margin-top:10px;
+}
+
+/* ── SETUP TAB ── */
+.setup-block {
+  border-radius:16px; padding:18px; margin-bottom:12px;
+}
+.sb-purple { background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(124,106,247,0.03)); border:1px solid rgba(124,106,247,0.22); }
+.sb-orange { background:linear-gradient(135deg,rgba(245,133,90,0.09),rgba(245,133,90,0.02)); border:1px solid rgba(245,133,90,0.2); }
+.sb-green  { background:linear-gradient(135deg,rgba(82,232,160,0.08),rgba(82,232,160,0.02)); border:1px solid rgba(82,232,160,0.18); }
+.sb-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; margin-bottom:12px; }
+.step { display:flex; gap:11px; margin-bottom:10px; align-items:flex-start; }
+.snum {
+  width:22px; height:22px; background:var(--accent); border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#fff; flex-shrink:0; margin-top:1px;
+}
+.snum.orange { background:var(--accent2); }
+.snum.green  { background:var(--accent3); color:var(--bg); }
+.step-txt { font-size:12px; color:var(--muted); line-height:1.6; }
+.step-txt b { color:var(--text); }
+.step-txt code {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:5px; padding:1px 6px; font-size:11px; color:var(--accent3);
+}
+
+.copy-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.copy-chip {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:9px; padding:7px 13px; font-size:11px;
+  color:var(--accent); cursor:pointer; font-family:'DM Mono',monospace;
+  transition:background 0.15s;
+}
+.copy-chip:active { background:rgba(124,106,247,0.15); }
+
+.banks-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
+.bank-row {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:11px; padding:10px 12px;
+}
+.bank-name { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; margin-bottom:3px; }
+.bank-id { font-size:10px; color:var(--accent3); font-family:'DM Mono',monospace; }
+
+/* FAB */
+.fab {
+  position:fixed; bottom:30px; right:22px;
+  width:54px; height:54px; background:var(--accent);
+  border-radius:17px; border:none; color:#fff; font-size:26px;
+  cursor:pointer; z-index:50;
+  box-shadow:0 8px 24px rgba(124,106,247,0.38);
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.15s, box-shadow 0.15s;
+}
+.fab:active { transform:scale(0.91); box-shadow:0 4px 12px rgba(124,106,247,0.25); }
+
+.empty { text-align:center; padding:44px 20px; color:var(--muted); font-size:12px; }
+.empty-ico { font-size:38px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo">Spend<em>Lens</em></div>
+    <div class="month-pill" id="monthPill">MAR 2026</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-label">Total Spent This Month</div>
+    <div class="hero-amount"><sup>₹</sup><span id="heroTotal">0</span></div>
+    <div class="hero-sub">Budget left: <b id="heroLeft">₹0</b></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="statTxn">0</div><div class="stat-label">Txns</div></div>
+    <div class="stat"><div class="stat-val" id="statTop">—</div><div class="stat-label">Top Cat</div></div>
+    <div class="stat"><div class="stat-val" id="statAvg">₹0</div><div class="stat-label">Avg</div></div>
+  </div>
+
+  <div class="nav">
+    <button class="nb active" onclick="switchTab('overview',this)">Overview</button>
+    <button class="nb" onclick="switchTab('transactions',this)">History</button>
+    <button class="nb" onclick="switchTab('budgets',this)">Budgets</button>
+    <button class="nb" onclick="switchTab('setup',this)">Setup</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="sec active" id="tab-overview">
+    <div class="pending-banner" id="pendingBanner" onclick="processPending()">
+      <div class="pb-row">
+        <div class="pb-title">⚡ New Transaction!</div>
+        <div class="pb-badge" id="pendingCount">0</div>
+      </div>
+      <div class="pb-desc" id="pendingDesc">Tap to categorize</div>
+    </div>
+    <div class="sec-title">By Category</div>
+    <div id="catList"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="sec" id="tab-transactions">
+    <div class="sec-title">All Transactions</div>
+    <div id="txnList"></div>
+  </div>
+
+  <!-- BUDGETS -->
+  <div class="sec" id="tab-budgets">
+    <div class="sec-title">Monthly Limits</div>
+    <div id="budgetList"></div>
+    <button class="btn-save" onclick="saveBudgets()">✓ Save Budgets</button>
+  </div>
+
+  <!-- SETUP -->
+  <div class="sec" id="tab-setup">
+
+    <div class="setup-block sb-orange">
+      <div class="sb-title">📱 Step 1 — Install SpendLens</div>
+      <div class="step"><div class="snum orange">1</div><div class="step-txt">Open this page in <b>Safari</b> on your iPhone</div></div>
+      <div class="step"><div class="snum orange">2</div><div class="step-txt">Tap the <b>Share</b> button → <b>"Add to Home Screen"</b></div></div>
+      <div class="step"><div class="snum orange">3</div><div class="step-txt">Tap <b>Add</b> — SpendLens is now on your home screen</div></div>
+      <div class="step"><div class="snum orange">4</div><div class="step-txt">Copy your app URL — you'll need it in Step 2<br><code id="appUrl">this page's URL</code></div></div>
+      <div class="copy-row">
+        <div class="copy-chip" onclick="copyUrl()">📋 Copy App URL</div>
+      </div>
+    </div>
+
+    <div class="setup-block sb-purple">
+      <div class="sb-title">⚙️ Step 2 — Create One Shortcut per Bank</div>
+      <div class="step"><div class="snum">1</div><div class="step-txt">Open <b>Shortcuts</b> app → tap <b>Automation</b> tab at bottom</div></div>
+      <div class="step"><div class="snum">2</div><div class="step-txt">Tap <b>+</b> → <b>New Automation</b> → choose <b>"Message"</b></div></div>
+      <div class="step"><div class="snum">3</div><div class="step-txt">Set <b>From:</b> to the bank sender ID below, enable <b>"Run Immediately"</b></div></div>
+      <div class="step"><div class="snum">4</div><div class="step-txt">Add action: <b>Get Details of Messages</b> → select <b>Body</b></div></div>
+      <div class="step"><div class="snum">5</div><div class="step-txt">Add action: <b>Match Text</b> → paste the regex for your bank</div></div>
+      <div class="step"><div class="snum">6</div><div class="step-txt">Add action: <b>Open URLs</b> → paste the URL template below</div></div>
+
+      <div class="banks-grid" id="banksGrid"></div>
+
+      <div style="margin-top:14px;">
+        <div class="sec-title" style="margin-bottom:8px;">Regex Patterns (copy per bank)</div>
+        <div id="regexList"></div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="sec-title" style="margin-bottom:8px;">URL Template for "Open URLs" action</div>
+        <div class="step-txt" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent3);word-break:break-all;" id="urlTemplate">
+          YOUR_APP_URL?merchant=MERCHANT&amount=AMOUNT&bank=BANK
+        </div>
+        <div class="copy-row">
+          <div class="copy-chip" onclick="copyUrlTemplate()">📋 Copy URL Template</div>
+          <div class="copy-chip" onclick="copyShortcutsGuide()">📋 Copy Full Guide</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-block sb-green">
+      <div class="sb-title">✅ Step 3 — Test It</div>
+      <div class="step"><div class="snum green">1</div><div class="step-txt">Make a small transaction on any linked card</div></div>
+      <div class="step"><div class="snum green">2</div><div class="step-txt">Bank SMS arrives → Shortcut fires automatically</div></div>
+      <div class="step"><div class="snum green">3</div><div class="step-txt">SpendLens opens showing amount + merchant</div></div>
+      <div class="step"><div class="snum green">4</div><div class="step-txt">Tap a category → transaction saved instantly 🎉</div></div>
+      <div class="copy-row">
+        <div class="copy-chip" onclick="testTransaction()">🧪 Simulate Test Transaction</div>
+      </div>
+    </div>
+
+    <div style="margin-top:4px; margin-bottom:16px;">
+      <button class="btn-primary" style="background:var(--danger);margin-top:0" onclick="if(confirm('Clear ALL data?'))clearAll()">🗑 Clear All Data</button>
+    </div>
+
+  </div>
+</div>
+
+<button class="fab" onclick="openAdd()">+</button>
+
+<!-- Categorize sheet -->
+<div class="overlay" id="catOverlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-title">Categorize Spend</div>
+    <div class="sheet-sub">New Transaction Detected</div>
+    <div class="sheet-amt" id="sheetAmt">₹0</div>
+    <div class="sheet-merchant" id="sheetMerchant">
+      <span id="sheetMerchantName"></span><br>
+      <span class="sheet-bank" id="sheetBank"></span>
+    </div>
+    <div class="cat-grid" id="catPickerGrid"></div>
+  </div>
+</div>
+
+<!-- Add manual sheet -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-title">Add Transaction</div>
+    <div class="sheet-sub">Manual Entry</div>
+    <div class="form-row"><label>Merchant / Description</label><input class="finput" id="fMerchant" placeholder="e.g. Swiggy, Petrol pump..."></div>
+    <div class="form-row"><label>Amount (₹)</label><input class="finput" id="fAmount" type="number" placeholder="0.00"></div>
+    <div class="form-row"><label>Bank / Card</label><input class="finput" id="fBank" placeholder="e.g. HDFC Credit Card"></div>
+    <div class="form-row"><label>Category</label><select class="fselect" id="fCat"></select></div>
+    <button class="btn-primary" onclick="submitAdd()">Add Transaction</button>
+    <button class="btn-ghost" onclick="closeAdd()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const CATS = [
+  {id:'food',       name:'Food & Dining',     icon:'🍜', color:'#f5855a'},
+  {id:'transport',  name:'Transport & Fuel',  icon:'🚗', color:'#7c6af7'},
+  {id:'shopping',   name:'Shopping',          icon:'🛍️', color:'#f7c46a'},
+  {id:'bills',      name:'Bills & Utilities', icon:'⚡', color:'#52e8a0'},
+  {id:'entertain',  name:'Entertainment',     icon:'🎬', color:'#e86af0'},
+  {id:'travel',     name:'Travel',            icon:'✈️', color:'#6ab4f7'},
+  {id:'groceries',  name:'Groceries',         icon:'🛒', color:'#a8e86a'},
+  {id:'other',      name:'Other',             icon:'💳', color:'#888'},
+];
+
+const BANKS = [
+  {name:'HDFC',     senders:['VM-HDFCBK','BW-HDFCBK'], regex:`(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@|merchant)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+  {name:'ICICI',    senders:['VM-ICICIB','BW-ICICIB'],  regex:`(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+  {name:'SBI',      senders:['VM-SBIBNK','BW-SBIINB'],  regex:`(?:debited|INR|Rs\\.?)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|to)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+  {name:'Axis',     senders:['VM-AXISBK','BW-AXISBK'],  regex:`(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+  {name:'Amex',     senders:['VM-AMEXIN'],               regex:`(?:INR|Rs\\.?|₹|USD)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+  {name:'IndusInd', senders:['VM-INDBKM'],               regex:`(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})`},
+];
+
+const DEFAULT_BUDGETS = {food:8000,transport:5000,shopping:10000,bills:6000,entertain:3000,travel:15000,groceries:5000,other:3000};
+
+let S = {transactions:[], budgets:{...DEFAULT_BUDGETS}, pending:[]};
+
+function load(){try{const d=localStorage.getItem('sl2');if(d)S={...S,...JSON.parse(d)}}catch(e){}}
+function save(){localStorage.setItem('sl2',JSON.stringify(S))}
+function clearAll(){S={transactions:[],budgets:{...DEFAULT_BUDGETS},pending:[]};save();render()}
+
+function fmt(n){return Number(n).toLocaleString('en-IN')}
+
+function getMonthTxns(){
+  const now=new Date();
+  return S.transactions.filter(t=>{const d=new Date(t.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+}
+
+// ── RENDER ────────────────────────────────────────────
+function render(){
+  const txns=getMonthTxns();
+  const total=txns.reduce((s,t)=>s+t.amount,0);
+  const totalBudget=Object.values(S.budgets).reduce((a,b)=>a+b,0);
+
+  // hero
+  document.getElementById('heroTotal').textContent=fmt(total);
+  document.getElementById('heroLeft').textContent='₹'+fmt(Math.max(0,totalBudget-total));
+
+  // month
+  const now=new Date();
+  document.getElementById('monthPill').textContent=now.toLocaleString('en',{month:'short'}).toUpperCase()+' '+now.getFullYear();
+
+  // stats
+  document.getElementById('statTxn').textContent=txns.length;
+  const catTotals={};
+  txns.forEach(t=>{catTotals[t.category]=(catTotals[t.category]||0)+t.amount});
+  const topEntry=Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  const topCat=topEntry?CATS.find(c=>c.id===topEntry[0]):null;
+  document.getElementById('statTop').textContent=topCat?topCat.icon:'—';
+  document.getElementById('statAvg').textContent=txns.length?'₹'+fmt(Math.round(total/txns.length)):'₹0';
+
+  // pending banner
+  const pending=S.pending||[];
+  const banner=document.getElementById('pendingBanner');
+  if(pending.length>0){
+    banner.classList.add('show');
+    document.getElementById('pendingCount').textContent=pending.length;
+    const p=pending[0];
+    document.getElementById('pendingDesc').innerHTML=`<b>₹${fmt(p.amount)}</b> at ${p.merchant} · ${p.bank} — tap to categorize`;
+  } else {
+    banner.classList.remove('show');
+  }
+
+  // category cards
+  document.getElementById('catList').innerHTML=CATS.map(cat=>{
+    const spent=catTotals[cat.id]||0;
+    const budget=S.budgets[cat.id]||0;
+    const pct=budget>0?Math.min(100,(spent/budget)*100):0;
+    const color=pct>90?'#f76a6a':pct>70?'#f7c46a':cat.color;
+    return `<div class="cat-card">
+      <div class="cc-row">
+        <div class="cc-left"><div class="cc-icon">${cat.icon}</div><div class="cc-name">${cat.name}</div></div>
+        <div class="cc-right"><div class="cc-amt" style="color:${color}">₹${fmt(spent)}</div><div class="cc-of">of ₹${fmt(budget)}</div></div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // history
+  const all=[...S.transactions].reverse();
+  document.getElementById('txnList').innerHTML=all.length?all.map(t=>{
+    const cat=CATS.find(c=>c.id===t.category)||CATS[7];
+    const d=new Date(t.date);
+    return `<div class="txn">
+      <div class="txn-ico">${cat.icon}</div>
+      <div class="txn-info">
+        <div class="txn-name">${t.merchant}</div>
+        <div class="txn-meta">${t.bank} · ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+        <div class="txn-badge">${cat.name}</div>
+      </div>
+      <div class="txn-amt">₹${fmt(t.amount)}</div>
+    </div>`;
+  }).join(''):'<div class="empty"><div class="empty-ico">📭</div>No transactions yet</div>';
+
+  // budget inputs
+  document.getElementById('budgetList').innerHTML=CATS.map(cat=>`
+    <div class="bset">
+      <div class="bset-ico">${cat.icon}</div>
+      <div class="bset-name">${cat.name}</div>
+      <div class="bset-wrap"><div class="bset-sym">₹</div><input class="bset-inp" type="number" id="b_${cat.id}" value="${S.budgets[cat.id]||0}"></div>
+    </div>`).join('');
+
+  // add form cats
+  document.getElementById('fCat').innerHTML=CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+
+  // setup — banks grid
+  document.getElementById('banksGrid').innerHTML=BANKS.map(b=>`
+    <div class="bank-row">
+      <div class="bank-name">${b.name}</div>
+      ${b.senders.map(s=>`<div class="bank-id">${s}</div>`).join('')}
+    </div>`).join('');
+
+  // setup — regex list
+  document.getElementById('regexList').innerHTML=BANKS.map(b=>`
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;">${b.name}</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent3);word-break:break-all;">${b.regex}</div>
+      <div class="copy-row" style="margin-top:6px"><div class="copy-chip" onclick="copyText('${b.regex.replace(/'/g,"\\'")}')">📋 Copy ${b.name} Regex</div></div>
+    </div>`).join('');
+
+  // url template
+  const base=location.href.split('?')[0];
+  const tmpl=base+'?merchant=MERCHANT_MATCH&amount=AMOUNT_MATCH&bank='+encodeURIComponent('BANK_NAME');
+  document.getElementById('urlTemplate').textContent=tmpl;
+  document.getElementById('appUrl').textContent=base;
+}
+
+// ── TABS ──────────────────────────────────────────────
+function switchTab(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── PENDING / CATEGORIZE ──────────────────────────────
+let pendingIdx=0;
+function processPending(){
+  if(!S.pending||S.pending.length===0)return;
+  pendingIdx=0;
+  showCatSheet(S.pending[0]);
+}
+
+function showCatSheet(txn){
+  document.getElementById('sheetAmt').textContent='₹'+fmt(txn.amount);
+  document.getElementById('sheetMerchantName').textContent=txn.merchant;
+  document.getElementById('sheetBank').textContent=txn.bank;
+  document.getElementById('catPickerGrid').innerHTML=CATS.map(c=>`
+    <div class="cat-opt" onclick="assignCat('${c.id}')">
+      <div class="co-icon">${c.icon}</div>
+      <div class="co-name">${c.name}</div>
+    </div>`).join('');
+  document.getElementById('catOverlay').classList.add('show');
+}
+
+function assignCat(catId){
+  const txn=S.pending[pendingIdx];
+  S.transactions.push({...txn,category:catId,date:txn.date||new Date().toISOString()});
+  S.pending.splice(pendingIdx,1);
+  save();
+  document.getElementById('catOverlay').classList.remove('show');
+  render();
+  if(S.pending.length>0)setTimeout(()=>showCatSheet(S.pending[0]),320);
+}
+
+// ── ADD MANUAL ────────────────────────────────────────
+function openAdd(){document.getElementById('addOverlay').classList.add('show');}
+function closeAdd(){document.getElementById('addOverlay').classList.remove('show');}
+function submitAdd(){
+  const m=document.getElementById('fMerchant').value.trim()||'Unknown';
+  const a=parseFloat(document.getElementById('fAmount').value)||0;
+  const bk=document.getElementById('fBank').value.trim()||'Manual';
+  const cat=document.getElementById('fCat').value;
+  if(a<=0){alert('Enter a valid amount');return;}
+  S.transactions.push({merchant:m,amount:a,bank:bk,category:cat,date:new Date().toISOString()});
+  save(); closeAdd(); render();
+}
+
+// ── BUDGETS ───────────────────────────────────────────
+function saveBudgets(){
+  CATS.forEach(c=>{S.budgets[c.id]=parseFloat(document.getElementById('b_'+c.id).value)||0;});
+  save(); render(); alert('✅ Budgets saved!');
+}
+
+// ── URL PARAM HANDLER (from Shortcuts) ───────────────
+function handleUrlParams(){
+  const p=new URLSearchParams(location.search);
+  const merchant=p.get('merchant');
+  const amount=parseFloat(p.get('amount'));
+  const bank=p.get('bank')||'Bank Alert';
+  if(merchant&&amount>0){
+    S.pending=S.pending||[];
+    S.pending.push({merchant:decodeURIComponent(merchant),amount,bank:decodeURIComponent(bank),date:new Date().toISOString()});
+    save();
+    // Clean URL without reload
+    history.replaceState({},'',location.pathname);
+    render();
+    setTimeout(()=>processPending(),600);
+  }
+}
+
+// ── TEST ──────────────────────────────────────────────
+function testTransaction(){
+  S.pending=S.pending||[];
+  S.pending.push({merchant:'Swiggy',amount:349,bank:'HDFC Credit',date:new Date().toISOString()});
+  save(); render();
+  setTimeout(()=>processPending(),300);
+}
+
+// ── COPY HELPERS ──────────────────────────────────────
+function copyText(txt){
+  navigator.clipboard.writeText(txt).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  });
+  alert('✅ Copied!');
+}
+function copyUrl(){copyText(location.href.split('?')[0]);}
+function copyUrlTemplate(){
+  const base=location.href.split('?')[0];
+  copyText(base+'?merchant=MERCHANT_MATCH&amount=AMOUNT_MATCH&bank=BANK_NAME');
+}
+function copyShortcutsGuide(){
+  const guide=`SpendLens — iOS Shortcuts Setup Guide
+=======================================
+
+YOUR APP URL: ${location.href.split('?')[0]}
+
+For EACH bank, create a NEW Automation in the Shortcuts app:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP-BY-STEP FOR EACH BANK:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Open Shortcuts → Automation tab → + New Automation
+2. Choose trigger: "Message"
+3. From: [paste the sender ID below]
+4. Message Contains: "debited" OR "spent" OR "INR"
+5. Enable "Run Immediately" (so it doesn't ask permission)
+6. Add action: "Get Details of Messages" → select Body
+7. Add action: "Match Text" → paste the Regex below, input = Message Body
+   Enable: Use Regular Expression ✓
+   Get: First Match
+8. Add action: "Get Item from List" → Get: First Item (this is the Amount)
+9. Add another "Get Item from List" → Get: Second Item (this is the Merchant)
+10. Add action: "Open URLs"
+    URL = YOUR_APP_URL?merchant=[Second Match]&amount=[First Match]&bank=BANK_NAME
+    (Replace YOUR_APP_URL with your actual app URL)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BANK SENDER IDs & REGEX:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HDFC    → VM-HDFCBK / BW-HDFCBK
+ICICI   → VM-ICICIB / BW-ICICIB
+SBI     → VM-SBIBNK / BW-SBIINB
+Axis    → VM-AXISBK / BW-AXISBK
+Amex    → VM-AMEXIN
+IndusInd→ VM-INDBKM
+
+REGEX (same for all banks):
+(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?).*?(?:at|@|merchant)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLE FINAL URL:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${location.href.split('?')[0]}?merchant=Swiggy&amount=349&bank=HDFC
+
+You need to create 6 automations total — one per bank.
+Each automation is identical except for the sender ID and bank name in the URL.
+`;
+  copyText(guide);
+}
+
+// ── INIT ─────────────────────────────────────────────
+load();
+handleUrlParams();
+render();
+</script>
+</body>
+</html>
