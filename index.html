@@ -238,36 +238,6 @@ body::before{content:'';position:fixed;inset:0;
 
 .empty{text-align:center;padding:38px 20px;color:var(--muted);font-size:12px;}
 .empty-ico{font-size:34px;margin-bottom:10px;}
-
-/* ── IMPORT TAB ── */
-.import-hero{background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(124,106,247,0.03));border:1px solid rgba(124,106,247,0.22);border-radius:18px;padding:20px;margin-bottom:16px;text-align:center;}
-.import-hero-label{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
-.import-hero-count{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);line-height:1.1;margin-bottom:4px;}
-.import-hero-sub{font-size:11px;color:var(--muted);line-height:1.6;}
-.import-how{margin-bottom:4px;}
-.how-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
-.how-num{width:24px;height:24px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;margin-top:1px;}
-.how-txt{font-size:12px;color:var(--muted);line-height:1.6;}
-.how-txt b{color:var(--text);}
-.shortcut-block{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
-.sc-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;margin-bottom:8px;}
-.sc-note{font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:10px;}
-.sc-note b{color:var(--text);}
-.sc-action{display:flex;gap:11px;align-items:flex-start;margin-bottom:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;}
-.sc-action-num{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px;}
-.sc-action-body{flex:1;}
-.sc-action-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:2px;}
-.sc-action-detail{font-size:10px;color:var(--muted);line-height:1.6;}
-.sc-action-detail b{color:var(--text);}
-.sc-action-detail code{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--accent3);}
-
-/* pending import list */
-.imp-txn{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:7px;}
-.imp-txn-info{flex:1;min-width:0;}
-.imp-txn-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.imp-txn-meta{font-size:10px;color:var(--muted);margin-top:2px;}
-.imp-txn-amt{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent2);flex-shrink:0;}
-.imp-txn-del{font-size:10px;color:var(--muted);cursor:pointer;margin-left:8px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -293,7 +263,6 @@ body::before{content:'';position:fixed;inset:0;
     <button class="nb"          onclick="switchTab('history',this)">History</button>
     <button class="nb"          onclick="switchTab('budgets',this)">Budgets</button>
     <button class="nb"          onclick="switchTab('cards',this)">Cards</button>
-    <button class="nb"          onclick="switchTab('import',this)">Import</button>
     <button class="nb"          onclick="switchTab('setup',this)">Setup</button>
   </div>
 
@@ -372,55 +341,6 @@ body::before{content:'';position:fixed;inset:0;
       <div class="form-row"><label>Card</label><select class="fselect" id="pastBank"></select></div>
       <div class="form-row"><label>Category</label><select class="fselect" id="pastCat"></select></div>
       <button class="btn-warn" onclick="submitPast()">+ Add Past Expense</button>
-    </div>
-  </div>
-
-  <!-- ══ IMPORT TAB ══ -->
-  <div class="sec" id="tab-import">
-    <div id="importPendingSection" style="display:none;">
-      <div class="import-hero">
-        <div class="import-hero-label">Imported · Pending Categorization</div>
-        <div class="import-hero-count"><span id="importPendingCount">0</span> transactions waiting</div>
-        <div class="import-hero-sub">Tap a category for each transaction below</div>
-      </div>
-      <div id="importPendingList"></div>
-      <button class="btn-primary" style="margin-top:12px;" onclick="startBulkCategorize()">⚡ Start Categorizing</button>
-      <button class="btn-ghost" style="margin-top:8px;" onclick="skipAllToOther()">Mark All as Other &amp; Save</button>
-    </div>
-    <div id="importInstructions">
-      <div class="import-hero">
-        <div class="import-hero-label">One-Time Bulk Import</div>
-        <div class="import-hero-count">All 6 Banks · Feb 12 → Today</div>
-        <div class="import-hero-sub">Run the Shortcut below once to pull all past SMS transactions into SpendLens in one shot</div>
-      </div>
-      <div class="sec-title">How It Works</div>
-      <div class="import-how">
-        <div class="how-step"><div class="how-num">1</div><div class="how-txt">You manually run the <b>SpendLens Bulk Import</b> Shortcut once</div></div>
-        <div class="how-step"><div class="how-num">2</div><div class="how-txt">It loops through all 6 bank senders and reads every SMS since <b>12 Feb 2025</b></div></div>
-        <div class="how-step"><div class="how-num">3</div><div class="how-txt">Parses amount + merchant + date from each debit message</div></div>
-        <div class="how-step"><div class="how-num">4</div><div class="how-txt">Builds a JSON batch and sends it to SpendLens in one call</div></div>
-        <div class="how-step"><div class="how-num">5</div><div class="how-txt">All transactions land here as a pending queue — categorize at your pace</div></div>
-      </div>
-      <div class="sec-title" style="margin-top:16px;">Build the Shortcut — Step by Step</div>
-      <div class="shortcut-block">
-        <div class="sc-title">Name it: <span style="color:var(--accent);">SpendLens Bulk Import</span></div>
-        <div class="sc-note">Shortcuts app → <b>+</b> → New Shortcut → add these actions in order:</div>
-        <div id="scActionList"></div>
-        <div class="copy-row" style="margin-top:12px;">
-          <div class="copy-chip" onclick="copyBulkGuide()">📋 Copy Full Guide</div>
-          <div class="copy-chip" onclick="copyAppUrlImport()">📋 Copy App URL</div>
-        </div>
-      </div>
-      <div class="shortcut-block" style="margin-top:10px;background:linear-gradient(135deg,rgba(247,196,106,0.08),rgba(247,196,106,0.02));border-color:rgba(247,196,106,0.22);">
-        <div class="sc-title" style="color:var(--warning);">⚠️ Before You Run</div>
-        <div class="sc-note" style="margin-top:8px;line-height:1.8;">
-          • iOS will ask permission to access Messages → tap <b>Allow</b><br>
-          • Takes 30–60 sec to scan all 6 banks<br>
-          • Run <b>only once</b> — running again duplicates transactions<br>
-          • If duplicates appear, delete them in the History tab<br>
-          • The per-bank automations (already set up) handle new SMS going forward
-        </div>
-      </div>
     </div>
   </div>
 
@@ -652,7 +572,6 @@ function renderAll(){
   renderBudgets();
   renderCards();
   renderSetup();
-  renderImportTab();
   populateHistoryFilters();
 }
 
@@ -952,9 +871,8 @@ function renderCards(){
   const catOpts=CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
   ['pastCat','fCat'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=catOpts;});
 
-  const earliest=new Date(Math.min(...BANKS_CFG.map(b=>currentCycle(b.id).start)));
   const pd=document.getElementById('pastDate');
-  if(pd){pd.max=new Date().toISOString().split('T')[0];if(!pd.value)pd.value=earliest.toISOString().split('T')[0];}
+  if(pd){pd.max=new Date().toISOString().split('T')[0];if(!pd.value)pd.value='2026-03-12';}
 }
 
 function saveCycles(){
@@ -987,7 +905,6 @@ function switchTab(id,btn){
   if(btn)btn.classList.add('active');
   if(id==='history')renderHistory();
   if(id==='cards')renderCards();
-  if(id==='import')renderImportTab();
 }
 
 // ─────────────────────────────────────────────────────
@@ -1069,14 +986,6 @@ function deleteTxn(id){
 // ─────────────────────────────────────────────────────
 function handleUrlParams(){
   const p=new URLSearchParams(location.search);
-
-  // Batch import from bulk shortcut
-  if(p.get('batch')){
-    handleBatchImport(p.get('batch'));
-    return;
-  }
-
-  // Single transaction from ongoing per-bank shortcut
   const merchant=p.get('merchant');
   const amount=parseFloat(p.get('amount'));
   const bank=p.get('bank')||'Bank Alert';
@@ -1112,165 +1021,8 @@ function copyFullGuide(){
 }
 
 // ─────────────────────────────────────────────────────
-// IMPORT TAB
+// INIT
 // ─────────────────────────────────────────────────────
-const SHORTCUT_ACTIONS=[
-  {color:'#7c6af7',name:'Text',detail:'Set a variable <b>allTxns</b> to an empty list <code>[]</code><br>This will collect all parsed transactions across all banks'},
-  {color:'#f5855a',name:'Repeat (6 times) — once per bank',detail:'Add a Repeat block. Inside it, process each bank in order:<br><b>HDFC · ICICI · SBI · Axis · Amex · IndusInd</b>'},
-  {color:'#52e8a0',name:'Filter Messages',detail:'Inside the repeat, add <b>Filter Messages</b><br>Sender: <code>VM-HDFCBK</code> (change per bank)<br>After Date: <code>12/02/2025</code><br>Message Contains: <code>debited</code>'},
-  {color:'#7c6af7',name:'Repeat with each Message',detail:'Add <b>Repeat with each item</b> in Filtered Messages<br>This loops through every matched SMS'},
-  {color:'#f7c46a',name:'Get Details of Messages',detail:'Get <b>Body</b> of Repeat Item (the SMS text)'},
-  {color:'#7c6af7',name:'Match Text',detail:'Pattern: <code>(?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?)</code><br>Use Regular Expression ✓ · Get: First Match<br>This extracts the <b>amount</b>'},
-  {color:'#f5855a',name:'Match Text (merchant)',detail:'Pattern: <code>(?:at|@|merchant)?\\s*([A-Z][A-Za-z0-9 &\'\\-]{2,28})</code><br>Use Regular Expression ✓ · Get: First Match<br>This extracts the <b>merchant name</b>'},
-  {color:'#52e8a0',name:'Get Details of Messages (date)',detail:'Get <b>Date Sent</b> of Repeat Item<br>Format the date as <code>yyyy-MM-dd</code>'},
-  {color:'#a78bfa',name:'Add to Variable',detail:'Add a Dictionary to <b>allTxns</b> with keys:<br><code>merchant</code> = Match Result (merchant)<br><code>amount</code> = Match Result (amount)<br><code>bank</code> = HDFC (hardcode per bank)<br><code>date</code> = Formatted Date'},
-  {color:'#f7c46a',name:'End Repeat (inner)'},
-  {color:'#f5855a',name:'End Repeat (outer bank loop)'},
-  {color:'#7c6af7',name:'Encode allTxns as JSON',detail:'Add <b>Get Keys of Dictionary</b> → then <b>URL Encode</b> the JSON text of allTxns'},
-  {color:'#52e8a0',name:'Open URLs',detail:'URL = <code>YOUR_APP_URL?batch=[encoded JSON]</code><br>Replace YOUR_APP_URL with your SpendLens GitHub Pages URL'},
-];
-
-function renderImportTab(){
-  const pending=S.pending||[];
-  const instrEl=document.getElementById('importInstructions');
-  const pendEl=document.getElementById('importPendingSection');
-
-  if(pending.length>0){
-    instrEl.style.display='none';
-    pendEl.style.display='block';
-    document.getElementById('importPendingCount').textContent=pending.length;
-    document.getElementById('importPendingList').innerHTML=pending.map((t,i)=>`
-      <div class="imp-txn" id="imptxn_${i}">
-        <div class="imp-txn-info">
-          <div class="imp-txn-name">${t.merchant||'Unknown'}</div>
-          <div class="imp-txn-meta">${t.bank} · ${t.date?new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'}):''}</div>
-        </div>
-        <div class="imp-txn-amt">₹${fmt(t.amount)}</div>
-        <div class="imp-txn-del" onclick="removePending(${i})">✕</div>
-      </div>`).join('');
-  } else {
-    instrEl.style.display='block';
-    pendEl.style.display='none';
-  }
-
-  // Build shortcut action list
-  const base=location.href.split('?')[0];
-  document.getElementById('scActionList').innerHTML=SHORTCUT_ACTIONS.map((a,i)=>`
-    <div class="sc-action">
-      <div class="sc-action-num" style="background:${a.color}">${i+1}</div>
-      <div class="sc-action-body">
-        <div class="sc-action-name">${a.name}</div>
-        ${a.detail?`<div class="sc-action-detail">${a.detail.replace('YOUR_APP_URL',base)}</div>`:''}
-      </div>
-    </div>`).join('');
-}
-
-function removePending(idx){
-  S.pending.splice(idx,1);
-  save();renderImportTab();
-  document.getElementById('importPendingCount').textContent=S.pending.length;
-}
-
-function startBulkCategorize(){
-  if(!S.pending||!S.pending.length)return;
-  pendingIdx=0;
-  showCatSheet(S.pending[0]);
-}
-
-function skipAllToOther(){
-  if(!confirm(`Mark all ${S.pending.length} pending transactions as "Other" and save?`))return;
-  S.pending.forEach(t=>{
-    S.transactions.push({...t,id:t.id||uid(),category:'other',date:t.date||new Date().toISOString()});
-  });
-  S.pending=[];
-  save();renderAll();renderImportTab();
-  alert(`✅ ${S.transactions.length} transactions saved as Other. You can re-categorize them in History.`);
-}
-
-function copyBulkGuide(){
-  const base=location.href.split('?')[0];
-  const guide=`SpendLens — Bulk Import Shortcut Guide
-==========================================
-Shortcut Name: SpendLens Bulk Import
-
-Create this in Shortcuts app → New Shortcut → add actions:
-
-STEP 1: Set Variable
-  Variable name: allTxns
-  Value: [] (empty list)
-
-STEP 2: For each bank, add a block:
-  Action: Filter Messages
-  Sender: VM-HDFCBK (change per bank)
-  After Date: 12/02/2025
-  Contains: debited
-
-STEP 3 (inside filter loop): Repeat with each message
-  3a. Get Details of Messages → Body
-  3b. Match Text (amount regex): (?:INR|Rs\\.?|₹)\\s*([\\d,]+(?:\\.\\d{2})?)
-      Use Regular Expression ON · Get First Match
-  3c. Match Text (merchant regex): (?:at|@|merchant)?\\s*([A-Z][A-Za-z0-9 &'\\-]{2,28})
-      Use Regular Expression ON · Get First Match
-  3d. Get Details of Messages → Date Sent → Format as yyyy-MM-dd
-  3e. Add to Variable allTxns a Dictionary:
-      merchant = [merchant match]
-      amount   = [amount match]
-      bank     = HDFC  ← hardcode bank name
-      date     = [formatted date]
-
-STEP 4: End repeat (inner)
-STEP 5: End repeat (outer - repeat for all 6 banks changing sender+bank name)
-
-Banks and their senders:
-  HDFC     → VM-HDFCBK / BW-HDFCBK
-  ICICI    → VM-ICICIB / BW-ICICIB
-  SBI      → VM-SBIBNK / BW-SBIINB
-  Axis     → VM-AXISBK / BW-AXISBK
-  Amex     → VM-AMEXIN
-  IndusInd → VM-INDBKM
-
-STEP 6: Open URLs
-  URL: ${base}?batch=[allTxns as JSON encoded]
-
-NOTE: Run this shortcut ONLY ONCE.
-After running, open SpendLens → Import tab → categorize all transactions.
-`;
-  copyText(guide);
-}
-
-function copyAppUrlImport(){copyText(location.href.split('?')[0]);}
-
-// ─────────────────────────────────────────────────────
-// HANDLE BATCH URL PARAM (from bulk import shortcut)
-// ─────────────────────────────────────────────────────
-function handleBatchImport(batchParam){
-  try{
-    const txns=JSON.parse(decodeURIComponent(batchParam));
-    if(!Array.isArray(txns)||!txns.length){alert('No transactions found in import');return;}
-    let added=0;
-    txns.forEach(t=>{
-      const amount=parseFloat(String(t.amount).replace(/,/g,''));
-      const merchant=String(t.merchant||'Unknown').trim();
-      const bank=String(t.bank||'Bank').trim();
-      const date=t.date?new Date(t.date+'T12:00:00').toISOString():new Date().toISOString();
-      if(amount>0){
-        S.pending=S.pending||[];
-        S.pending.push({id:uid(),merchant,amount,bank,date});
-        added++;
-      }
-    });
-    save();
-    history.replaceState({},'',location.pathname);
-    renderAll();
-    renderImportTab();
-    // Auto-switch to import tab
-    switchTab('import',document.querySelectorAll('.nb')[5]);
-    alert(`✅ ${added} transactions imported! Go to Import tab to categorize them.`);
-  }catch(e){
-    alert('Import failed — invalid data format. Make sure the Shortcut encodes the JSON correctly.');
-  }
-}
-
 load();
 handleUrlParams();
 renderAll();
