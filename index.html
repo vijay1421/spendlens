@@ -998,6 +998,69 @@ function handleUrlParams(){
 }
 
 // ─────────────────────────────────────────────────────
+// GMAIL FETCH — auto-pulls from Apps Script web app
+// ─────────────────────────────────────────────────────
+const GMAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxnpJQrInG6gFDmPhy3CrKdDRgVoVIm1lfkpYSMUNLKxSfbT9nmURcy1rWW9xyoUh9P/exec';
+
+async function fetchFromGmail(){
+  if(!GMAIL_ENDPOINT||GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
+  try {
+    // Fetch pending transactions from Apps Script
+    const res = await fetch(GMAIL_ENDPOINT + '?action=fetch');
+    const data = await res.json();
+    if(!data.transactions||!data.transactions.length) return;
+
+    // Add each one to pending queue if not already there
+    let added = 0;
+    data.transactions.forEach(t=>{
+      const exists = (S.pending||[]).some(p=>p.msgId===t.msgId) ||
+                     S.transactions.some(tx=>tx.msgId===t.msgId);
+      if(!exists){
+        S.pending = S.pending||[];
+        S.pending.push({
+          id: uid(),
+          msgId: t.msgId,
+          merchant: t.merchant,
+          amount: parseFloat(t.amount),
+          bank: t.bank,
+          date: t.date||new Date().toISOString()
+        });
+        added++;
+      }
+    });
+
+    if(added > 0){
+      save();
+      // Clear from Apps Script so we don't re-fetch
+      await fetch(GMAIL_ENDPOINT + '?action=clear');
+      renderAll();
+      // Show notification banner
+      showFetchBanner(added);
+    }
+  } catch(e) {
+    console.log('Gmail fetch error:', e);
+  }
+}
+
+function showFetchBanner(count){
+  const existing = document.getElementById('fetchBanner');
+  if(existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'fetchBanner';
+  banner.style.cssText = `
+    position:fixed;top:20px;left:50%;transform:translateX(-50%);
+    background:#52e8a0;color:#07080f;
+    font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+    padding:10px 20px;border-radius:20px;z-index:999;
+    box-shadow:0 4px 20px rgba(82,232,160,0.4);
+    animation:slideDown 0.3s ease;
+  `;
+  banner.textContent = `⚡ ${count} new transaction${count>1?'s':''} fetched!`;
+  document.body.appendChild(banner);
+  setTimeout(()=>{ if(banner.parentNode) banner.remove(); }, 4000);
+}
+
+// ─────────────────────────────────────────────────────
 // TEST & COPY
 // ─────────────────────────────────────────────────────
 function testTxn(){
@@ -1026,6 +1089,11 @@ function copyFullGuide(){
 load();
 handleUrlParams();
 renderAll();
+// Auto-fetch from Gmail on every app open
+fetchFromGmail();
+// Also re-fetch every 10 minutes while app is open
+setInterval(fetchFromGmail, 10 * 60 * 1000);
+
 </script>
 </body>
 </html>
