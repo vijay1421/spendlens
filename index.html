@@ -238,6 +238,23 @@ body::before{content:'';position:fixed;inset:0;
 
 .empty{text-align:center;padding:38px 20px;color:var(--muted);font-size:12px;}
 .empty-ico{font-size:34px;margin-bottom:10px;}
+
+/* ── CATEGORY MANAGER ── */
+.cat-mgr-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.cat-mgr-icon{font-size:22px;flex-shrink:0;cursor:pointer;}
+.cat-mgr-info{flex:1;}
+.cat-mgr-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.cat-mgr-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.cat-mgr-actions{display:flex;gap:6px;flex-shrink:0;}
+.cat-mgr-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;}
+.cat-mgr-btn:active{border-color:var(--accent);color:var(--accent);}
+.cat-mgr-btn.del:active{border-color:var(--danger);color:var(--danger);}
+.color-swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.swatch{width:28px;height:28px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:transform 0.15s;}
+.swatch.selected{border-color:#fff;transform:scale(1.15);}
+.sync-status{font-size:10px;color:var(--muted);text-align:center;padding:8px 0;}
+.sync-status.ok{color:var(--accent3);}
+.sync-status.err{color:var(--danger);}
 </style>
 </head>
 <body>
@@ -262,6 +279,7 @@ body::before{content:'';position:fixed;inset:0;
     <button class="nb next-tab" onclick="switchTab('next',this)">Next Cycle</button>
     <button class="nb"          onclick="switchTab('history',this)">History</button>
     <button class="nb"          onclick="switchTab('budgets',this)">Budgets</button>
+    <button class="nb"          onclick="switchTab('categories',this)">Categories</button>
     <button class="nb"          onclick="switchTab('cards',this)">Cards</button>
     <button class="nb"          onclick="switchTab('setup',this)">Setup</button>
   </div>
@@ -325,6 +343,14 @@ body::before{content:'';position:fixed;inset:0;
     <div class="sec-title">Category Limits</div>
     <div id="budgetList"></div>
     <button class="btn-save" onclick="saveBudgets()">✓ Save Budgets</button>
+  </div>
+
+  <!-- ══ CATEGORIES TAB ══ -->
+  <div class="sec" id="tab-categories">
+    <div class="sec-title">Your Categories</div>
+    <div id="catMgrList"></div>
+    <button class="btn-save" style="margin-top:4px;" onclick="openAddCat()">+ Add New Category</button>
+    <button class="btn-warn" style="margin-top:8px;" onclick="syncCategories()">☁ Sync to Google Sheets</button>
   </div>
 
   <!-- ══ CARDS TAB ══ -->
@@ -420,7 +446,7 @@ body::before{content:'';position:fixed;inset:0;
 // ─────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────
-const CATS=[
+const DEFAULT_CATS=[
   {id:'food',      name:'Food & Dining',    icon:'🍜', color:'#f5855a', hasBudget:false},
   {id:'transport', name:'Transport & Fuel', icon:'🚗', color:'#7c6af7', hasBudget:false},
   {id:'shopping',  name:'Shopping',         icon:'🛍️', color:'#f7c46a', hasBudget:true},
@@ -430,6 +456,8 @@ const CATS=[
   {id:'groceries', name:'Groceries',        icon:'🛒', color:'#a8e86a', hasBudget:false},
   {id:'other',     name:'Other',            icon:'💳', color:'#aaa',    hasBudget:true},
 ];
+// CATS is now dynamic — loaded from state
+let CATS=[...DEFAULT_CATS];
 
 const BANKS_CFG=[
   {id:'axis',     name:'Axis',     cycleDay:12, billDay:1, senders:['VM-AXISBK','BW-AXISBK']},
@@ -447,18 +475,28 @@ const DEFAULT_BUDGETS={shopping:10000,bills:6000,entertain:3000,travel:15000,oth
 // ─────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────
-let S={transactions:[],budgets:{...DEFAULT_BUDGETS},pending:[],cycles:{}};
+let S={transactions:[],budgets:{...DEFAULT_BUDGETS},pending:[],cycles:{},categories:[...DEFAULT_CATS]};
 let currentCard='all';
 let expandedCards=new Set();
 
 function load(){
   try{
-    const d=localStorage.getItem('sl5');
+    const d=localStorage.getItem('sl9');
     if(d){S={...S,...JSON.parse(d)};}
+    // Migrate from old storage key
+    if(!localStorage.getItem('sl9')&&localStorage.getItem('sl5')){
+      const old=JSON.parse(localStorage.getItem('sl5'));
+      S={...S,...old};
+    }
     BANKS_CFG.forEach(b=>{if(!S.cycles[b.id])S.cycles[b.id]=b.cycleDay;});
+    if(!S.categories||!S.categories.length) S.categories=[...DEFAULT_CATS];
+    CATS=S.categories;
   }catch(e){}
 }
-function save(){localStorage.setItem('sl5',JSON.stringify(S));}
+function save(){
+  S.categories=CATS;
+  localStorage.setItem('sl9',JSON.stringify(S));
+}
 function clearAll(){
   const c={};BANKS_CFG.forEach(b=>c[b.id]=b.cycleDay);
   S={transactions:[],budgets:{...DEFAULT_BUDGETS},pending:[],cycles:c};
@@ -816,13 +854,13 @@ function renderHistory(){
 }
 
 function txnRow(t){
-  const cat=CATS.find(c=>c.id===t.category)||CATS[7];
+  const cat=CATS.find(c=>c.id===t.category)||CATS[CATS.length-1];
   return `<div class="txn">
     <div class="txn-ico">${cat.icon}</div>
     <div class="txn-info">
       <div class="txn-name">${t.merchant}</div>
       <div class="txn-meta">${t.bank} · ${fmtDF(t.date)}</div>
-      <div class="txn-badge">${cat.name}</div>
+      <div class="txn-badge" style="cursor:pointer;color:var(--accent);" onclick="openRecat('${t.id}')">${cat.name} ✎</div>
     </div>
     <div class="txn-right">
       <div class="txn-amt">₹${fmt(t.amount)}</div>
@@ -905,10 +943,132 @@ function switchTab(id,btn){
   if(btn)btn.classList.add('active');
   if(id==='history')renderHistory();
   if(id==='cards')renderCards();
+  if(id==='categories')renderCatMgr();
 }
 
 // ─────────────────────────────────────────────────────
-// PENDING / CATEGORIZE
+// RECATEGORIZE
+// ─────────────────────────────────────────────────────
+let recatTxnId=null;
+function openRecat(txnId){
+  const t=S.transactions.find(x=>x.id===txnId);
+  if(!t)return;
+  recatTxnId=txnId;
+  document.getElementById('recatAmt').textContent='₹'+fmt(t.amount);
+  document.getElementById('recatMerchant').textContent=t.merchant;
+  document.getElementById('recatBank').textContent=t.bank;
+  document.getElementById('recatGrid').innerHTML=CATS.map(c=>`
+    <div class="cat-opt" onclick="applyRecat('${c.id}')">
+      <div class="co-icon">${c.icon}</div>
+      <div class="co-name">${c.name}</div>
+    </div>`).join('');
+  document.getElementById('recatOverlay').classList.add('show');
+}
+async function applyRecat(catId){
+  const t=S.transactions.find(x=>x.id===recatTxnId);
+  if(!t)return;
+  t.category=catId;
+  save();
+  document.getElementById('recatOverlay').classList.remove('show');
+  renderAll();renderHistory();
+  await sheetsCall('updateTxn','id='+t.id+'&category='+catId);
+}
+
+// ─────────────────────────────────────────────────────
+// CATEGORY MANAGER
+// ─────────────────────────────────────────────────────
+const COLOR_PALETTE=['#f5855a','#7c6af7','#f7c46a','#52e8a0','#e86af0','#6ab4f7','#a8e86a','#f76a6a','#fbbf24','#a78bfa','#34d399','#f472b6','#60a5fa','#fb923c','#aaa'];
+let editingCatId=null;
+let selectedColor=COLOR_PALETTE[0];
+
+function renderCatMgr(){
+  document.getElementById('catMgrList').innerHTML=CATS.map(cat=>`
+    <div class="cat-mgr-item">
+      <div class="cat-mgr-icon">${cat.icon}</div>
+      <div class="cat-mgr-info">
+        <div class="cat-mgr-name" style="color:${cat.color}">${cat.name}</div>
+        <div class="cat-mgr-sub">${cat.hasBudget?'Budget tracked':'No budget limit'}</div>
+      </div>
+      <div class="cat-mgr-actions">
+        <div class="cat-mgr-btn" onclick="openEditCat('${cat.id}')">✎ Edit</div>
+        <div class="cat-mgr-btn del" onclick="deleteCat('${cat.id}')">✕</div>
+      </div>
+    </div>`).join('');
+}
+function openAddCat(){
+  editingCatId=null; selectedColor=COLOR_PALETTE[0];
+  document.getElementById('catEditTitle').textContent='Add Category';
+  document.getElementById('catEditId').value='';
+  document.getElementById('catEditName').value='';
+  document.getElementById('catEditIcon').value='';
+  document.getElementById('catEditBudget').value='no';
+  renderColorSwatches();
+  document.getElementById('catEditOverlay').classList.add('show');
+}
+function openEditCat(catId){
+  const cat=CATS.find(c=>c.id===catId);
+  if(!cat)return;
+  editingCatId=catId; selectedColor=cat.color;
+  document.getElementById('catEditTitle').textContent='Edit Category';
+  document.getElementById('catEditId').value=catId;
+  document.getElementById('catEditName').value=cat.name;
+  document.getElementById('catEditIcon').value=cat.icon;
+  document.getElementById('catEditBudget').value=cat.hasBudget?'yes':'no';
+  renderColorSwatches();
+  document.getElementById('catEditOverlay').classList.add('show');
+}
+function renderColorSwatches(){
+  document.getElementById('colorSwatches').innerHTML=COLOR_PALETTE.map(c=>`
+    <div class="swatch ${c===selectedColor?'selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`).join('');
+}
+function selectColor(c){selectedColor=c;renderColorSwatches();}
+function saveCatEdit(){
+  const name=document.getElementById('catEditName').value.trim();
+  const icon=document.getElementById('catEditIcon').value.trim()||'💳';
+  const hasBudget=document.getElementById('catEditBudget').value==='yes';
+  if(!name){alert('Enter a category name');return;}
+  if(editingCatId){
+    const cat=CATS.find(c=>c.id===editingCatId);
+    if(cat){cat.name=name;cat.icon=icon;cat.color=selectedColor;cat.hasBudget=hasBudget;}
+  } else {
+    CATS.push({id:'cat_'+uid(),name,icon,color:selectedColor,hasBudget,budget:0});
+  }
+  save();
+  document.getElementById('catEditOverlay').classList.remove('show');
+  renderCatMgr();renderAll();
+}
+function deleteCat(catId){
+  const defaultIds=['food','transport','shopping','bills','entertain','travel','groceries','other'];
+  const msg=defaultIds.includes(catId)?'This is a default category. Delete anyway?':'Delete this category? Transactions will move to Other.';
+  if(!confirm(msg))return;
+  S.transactions.forEach(t=>{if(t.category===catId)t.category='other';});
+  CATS=CATS.filter(c=>c.id!==catId);
+  save();renderCatMgr();renderAll();
+}
+async function syncCategories(){
+  const btn=event.target;
+  btn.textContent='Syncing...';
+  const r=await sheetsCall('saveCats','data='+encodeURIComponent(JSON.stringify(CATS)));
+  btn.textContent=r&&r.status==='ok'?'☁ Synced ✅':'☁ Sync to Google Sheets';
+  setTimeout(()=>{btn.textContent='☁ Sync to Google Sheets';},3000);
+}
+
+// ─────────────────────────────────────────────────────
+// GOOGLE SHEETS SYNC
+// ─────────────────────────────────────────────────────
+async function sheetsCall(action,params=''){
+  if(!GMAIL_ENDPOINT||GMAIL_ENDPOINT.includes('PASTE_YOUR'))return null;
+  try{
+    const url=GMAIL_ENDPOINT+'?action='+action+(params?'&'+params:'');
+    const res=await fetch(url);
+    return await res.json();
+  }catch(e){console.log('Sheets error:',e);return null;}
+}
+async function syncTxnToSheets(txn){
+  await sheetsCall('saveTxn','data='+encodeURIComponent(JSON.stringify(txn)));
+}
+
+
 // ─────────────────────────────────────────────────────
 let pendingIdx=0;
 function processPending(){if(!S.pending||!S.pending.length)return;pendingIdx=0;showCatSheet(S.pending[0]);}
@@ -924,11 +1084,14 @@ function showCatSheet(txn){
 }
 function assignCat(catId){
   const txn=S.pending[pendingIdx];
-  S.transactions.push({...txn,id:txn.id||uid(),category:catId,date:txn.date||new Date().toISOString()});
+  const newTxn={...txn,id:txn.id||uid(),category:catId,date:txn.date||new Date().toISOString()};
+  S.transactions.push(newTxn);
   S.pending.splice(pendingIdx,1);
   save();
   document.getElementById('catOverlay').classList.remove('show');
   renderAll();
+  // Sync to Sheets in background
+  syncTxnToSheets(newTxn);
   if(S.pending.length>0)setTimeout(()=>showCatSheet(S.pending[0]),320);
 }
 
@@ -950,8 +1113,10 @@ function submitAdd(){
   const cat=document.getElementById('fCat').value;
   const dt=document.getElementById('fDate').value||new Date().toISOString().split('T')[0];
   if(a<=0){alert('Enter a valid amount');return;}
-  S.transactions.push({id:uid(),merchant:m,amount:a,bank:bk,category:cat,date:new Date(dt+'T12:00:00').toISOString()});
+  const txn={id:uid(),merchant:m,amount:a,bank:bk,category:cat,date:new Date(dt+'T12:00:00').toISOString()};
+  S.transactions.push(txn);
   save();closeAdd();renderAll();
+  syncTxnToSheets(txn);
 }
 
 // ─────────────────────────────────────────────────────
@@ -964,11 +1129,13 @@ function submitPast(){
   const bk=document.getElementById('pastBank').value||'Manual';
   const cat=document.getElementById('pastCat').value;
   if(!dt||a<=0){alert('Please fill date and amount');return;}
-  S.transactions.push({id:uid(),merchant:m,amount:a,bank:bk,category:cat,date:new Date(dt+'T12:00:00').toISOString(),isPast:true});
+  const txn={id:uid(),merchant:m,amount:a,bank:bk,category:cat,date:new Date(dt+'T12:00:00').toISOString(),isPast:true};
+  S.transactions.push(txn);
   save();
   document.getElementById('pastMerchant').value='';
   document.getElementById('pastAmount').value='';
   renderAll();
+  syncTxnToSheets(txn);
   alert('✅ Past expense added!');
 }
 
@@ -979,6 +1146,7 @@ function deleteTxn(id){
   if(!confirm('Delete this transaction?'))return;
   S.transactions=S.transactions.filter(t=>t.id!==id);
   save();renderAll();renderHistory();
+  sheetsCall('deleteTxn','id='+id);
 }
 
 // ─────────────────────────────────────────────────────
@@ -1000,7 +1168,7 @@ function handleUrlParams(){
 // ─────────────────────────────────────────────────────
 // GMAIL FETCH — auto-pulls from Apps Script web app
 // ─────────────────────────────────────────────────────
-const GMAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxnpJQrInG6gFDmPhy3CrKdDRgVoVIm1lfkpYSMUNLKxSfbT9nmURcy1rWW9xyoUh9P/exec';
+const GMAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzWb9SGDr3Wxej-B1W9xUHU0j7dV6ZweTb1KIdIM5DNzk--rMr2huBQsYP1rH-hCo9t/exec';
 
 async function fetchFromGmail(){
   if(!GMAIL_ENDPOINT||GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
@@ -1095,5 +1263,46 @@ fetchFromGmail();
 setInterval(fetchFromGmail, 10 * 60 * 1000);
 
 </script>
+<!-- Add / Edit Category -->
+<div class="overlay" id="catEditOverlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-title" id="catEditTitle">Add Category</div>
+    <div class="sheet-sub">CUSTOMIZE</div>
+    <input type="hidden" id="catEditId">
+    <div class="form-row"><label>Category Name</label><input class="finput" id="catEditName" placeholder="e.g. Healthcare, Gym..."></div>
+    <div class="form-row"><label>Icon (paste any emoji)</label><input class="finput" id="catEditIcon" placeholder="🏥" style="font-size:20px;"></div>
+    <div class="form-row">
+      <label>Color</label>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+    <div class="form-row">
+      <label>Track Budget?</label>
+      <select class="fselect" id="catEditBudget">
+        <option value="yes">Yes — set a monthly limit</option>
+        <option value="no">No — just track spend</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveCatEdit()">Save Category</button>
+    <button class="btn-ghost" onclick="document.getElementById('catEditOverlay').classList.remove('show')">Cancel</button>
+  </div>
+</div>
+
+<!-- Recategorize transaction -->
+<div class="overlay" id="recatOverlay">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sheet-title">Change Category</div>
+    <div class="sheet-sub">RECATEGORIZE</div>
+    <div class="sheet-amt" id="recatAmt">₹0</div>
+    <div class="sheet-merch">
+      <span id="recatMerchant"></span><br>
+      <span class="sheet-bank-tag" id="recatBank"></span>
+    </div>
+    <div class="cat-grid" id="recatGrid"></div>
+    <button class="btn-ghost" style="margin-top:12px;" onclick="document.getElementById('recatOverlay').classList.remove('show')">Cancel</button>
+  </div>
+</div>
+
 </body>
 </html>
