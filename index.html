@@ -398,8 +398,15 @@ body::before{content:'';position:fixed;inset:0;
         </div>
       </div>
     </div>
-    <div class="setup-block sb-g">
-      <div class="sb-title">🧪 Test</div>
+    <div class="setup-block sb-g" style="margin-bottom:10px;">
+  <div class="sb-title">☁️ Load Data from Sheets</div>
+  <div class="s-step">
+    <div class="s-num g">!</div>
+    <div class="s-txt">If you just installed the app or switched devices, tap below to load all your transactions from Google Sheets.</div>
+  </div>
+  <button class="btn-save" style="margin-top:8px;" onclick="loadFromSheets()">⬇ Load All Data from Sheets</button>
+  <div id="loadStatus" style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;"></div>
+</div>
       <div class="copy-row"><div class="copy-chip" onclick="testTxn()" style="color:var(--accent3);">▶ Simulate Transaction</div></div>
     </div>
     <div style="padding:4px 0 16px;">
