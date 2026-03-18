@@ -398,15 +398,8 @@ body::before{content:'';position:fixed;inset:0;
         </div>
       </div>
     </div>
-    <div class="setup-block sb-g" style="margin-bottom:10px;">
-  <div class="sb-title">☁️ Load Data from Sheets</div>
-  <div class="s-step">
-    <div class="s-num g">!</div>
-    <div class="s-txt">If you just installed the app or switched devices, tap below to load all your transactions from Google Sheets.</div>
-  </div>
-  <button class="btn-save" style="margin-top:8px;" onclick="loadFromSheets()">⬇ Load All Data from Sheets</button>
-  <div id="loadStatus" style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;"></div>
-</div>
+    <div class="setup-block sb-g">
+      <div class="sb-title">🧪 Test</div>
       <div class="copy-row"><div class="copy-chip" onclick="testTxn()" style="color:var(--accent3);">▶ Simulate Transaction</div></div>
     </div>
     <div style="padding:4px 0 16px;">
@@ -1175,45 +1168,35 @@ function handleUrlParams(){
 // ─────────────────────────────────────────────────────
 // GMAIL FETCH — auto-pulls from Apps Script web app
 // ─────────────────────────────────────────────────────
-const GMAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzWb9SGDr3Wxej-B1W9xUHU0j7dV6ZweTb1KIdIM5DNzk--rMr2huBQsYP1rH-hCo9t/exec';
+const GMAIL_ENDPOINT = 'PASTE_YOUR_WEB_APP_URL_HERE';
 
 async function fetchFromGmail(){
-  if(!GMAIL_ENDPOINT || GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
+  if(!GMAIL_ENDPOINT||GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
   try {
-    // ✅ FIX: was 'fetch', must be 'fetchPending'
-    const res = await fetch(GMAIL_ENDPOINT + '?action=fetchPending');
+    // Fetch pending transactions from Apps Script
+    const res = await fetch(GMAIL_ENDPOINT + '?action=fetch');
     const data = await res.json();
-    if(!data.transactions || !data.transactions.length) return;
+    if(!data.transactions||!data.transactions.length) return;
 
+    // Add each one to pending queue if not already there
     let added = 0;
-    data.transactions.forEach(t => {
-      const exists = (S.pending||[]).some(p => p.msgId === t.msgId) ||
-                     S.transactions.some(tx => tx.msgId === t.msgId);
+    data.transactions.forEach(t=>{
+      const exists = (S.pending||[]).some(p=>p.msgId===t.msgId) ||
+                     S.transactions.some(tx=>tx.msgId===t.msgId);
       if(!exists){
-        S.pending = S.pending || [];
+        S.pending = S.pending||[];
         S.pending.push({
           id: uid(),
           msgId: t.msgId,
           merchant: t.merchant,
           amount: parseFloat(t.amount),
           bank: t.bank,
-          date: t.date || new Date().toISOString()
+          date: t.date||new Date().toISOString()
         });
         added++;
       }
     });
 
-    if(added > 0){
-      save();
-      // ✅ FIX: was 'clear', must be 'clearPending'
-      await fetch(GMAIL_ENDPOINT + '?action=clearPending');
-      renderAll();
-      showFetchBanner(added);
-    }
-  } catch(e) {
-    console.log('Gmail fetch error:', e);
-  }
-}
     if(added > 0){
       save();
       // Clear from Apps Script so we don't re-fetch
