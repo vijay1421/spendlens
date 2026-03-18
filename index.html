@@ -1178,32 +1178,42 @@ function handleUrlParams(){
 const GMAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzWb9SGDr3Wxej-B1W9xUHU0j7dV6ZweTb1KIdIM5DNzk--rMr2huBQsYP1rH-hCo9t/exec';
 
 async function fetchFromGmail(){
-  if(!GMAIL_ENDPOINT||GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
+  if(!GMAIL_ENDPOINT || GMAIL_ENDPOINT.includes('PASTE_YOUR')) return;
   try {
-    // Fetch pending transactions from Apps Script
-    const res = await fetch(GMAIL_ENDPOINT + '?action=fetch');
+    // ✅ FIX: was 'fetch', must be 'fetchPending'
+    const res = await fetch(GMAIL_ENDPOINT + '?action=fetchPending');
     const data = await res.json();
-    if(!data.transactions||!data.transactions.length) return;
+    if(!data.transactions || !data.transactions.length) return;
 
-    // Add each one to pending queue if not already there
     let added = 0;
-    data.transactions.forEach(t=>{
-      const exists = (S.pending||[]).some(p=>p.msgId===t.msgId) ||
-                     S.transactions.some(tx=>tx.msgId===t.msgId);
+    data.transactions.forEach(t => {
+      const exists = (S.pending||[]).some(p => p.msgId === t.msgId) ||
+                     S.transactions.some(tx => tx.msgId === t.msgId);
       if(!exists){
-        S.pending = S.pending||[];
+        S.pending = S.pending || [];
         S.pending.push({
           id: uid(),
           msgId: t.msgId,
           merchant: t.merchant,
           amount: parseFloat(t.amount),
           bank: t.bank,
-          date: t.date||new Date().toISOString()
+          date: t.date || new Date().toISOString()
         });
         added++;
       }
     });
 
+    if(added > 0){
+      save();
+      // ✅ FIX: was 'clear', must be 'clearPending'
+      await fetch(GMAIL_ENDPOINT + '?action=clearPending');
+      renderAll();
+      showFetchBanner(added);
+    }
+  } catch(e) {
+    console.log('Gmail fetch error:', e);
+  }
+}
     if(added > 0){
       save();
       // Clear from Apps Script so we don't re-fetch
