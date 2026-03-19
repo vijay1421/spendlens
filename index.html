@@ -1307,64 +1307,48 @@ async function pullFromSheets(){
       console.log('Category fetch skipped:', e);
     }
 
-    // 3. Merge transactions — keep local ones that aren't in sheets, add sheet ones that aren't local
+    // 3. Merge transactions — add sheet ones that aren't local
     const localIds = new Set(S.transactions.map(t => t.id));
+    const localMsgIds = new Set(S.transactions.map(t => t.msgId).filter(Boolean));
     let added = 0;
 
     sheetTxns.forEach(t => {
-      if(!localIds.has(t.id)){
-        S.transactions.push({
-          id: t.id,
-          merchant: t.merchant,
-          amount: parseFloat(t.amount) || 0,
-          bank: t.bank,
-          category: t.category,
-          date: t.date,
-          msgId: t.msgId || ''
-        });
-        added++;
-      }
+      if(!t || !t.id || t.id === 'null' || t.id === '') return;
+      if(localIds.has(t.id)) return;
+      if(t.msgId && localMsgIds.has(t.msgId)) return;
+      S.transactions.push({
+        id: String(t.id || ''),
+        merchant: String(t.merchant || 'Unknown'),
+        amount: parseFloat(t.amount) || 0,
+        bank: String(t.bank || ''),
+        category: String(t.category || 'other'),
+        date: t.date || new Date().toISOString(),
+        msgId: String(t.msgId || '')
+      });
+      added++;
     });
 
-    // 4. Apply categories if found
+    // 4. Clean pending — remove any that already exist in transactions
+    const allTxnMsgIds = new Set(S.transactions.map(t => t.msgId).filter(Boolean));
+    const allTxnIds = new Set(S.transactions.map(t => t.id));
+    S.pending = (S.pending || []).filter(p => {
+      if(p.msgId && allTxnMsgIds.has(p.msgId)) return false;
+      if(allTxnIds.has(p.id)) return false;
+      return true;
+    });
+
+    // 5. Apply categories if found
     if(sheetCats.length > 0){
       CATS = sheetCats;
       S.categories = sheetCats;
-    }
-
-    // 5. Fetch pending transactions too
-    try {
-      const pendRes = await fetch(GMAIL_ENDPOINT + '?action=fetch');
-      const pendData = await pendRes.json();
-      if(pendData.status === 'ok' && pendData.transactions && pendData.transactions.length > 0){
-        const pendingIds = new Set((S.pending || []).map(p => p.msgId));
-        const txnMsgIds = new Set(S.transactions.map(t => t.msgId).filter(Boolean));
-        let pendAdded = 0;
-        pendData.transactions.forEach(t => {
-          if(!pendingIds.has(t.msgId) && !txnMsgIds.has(t.msgId)){
-            S.pending = S.pending || [];
-            S.pending.push({
-              id: uid(),
-              msgId: t.msgId,
-              merchant: t.merchant,
-              amount: parseFloat(t.amount),
-              bank: t.bank,
-              date: t.date || new Date().toISOString()
-            });
-            pendAdded++;
-          }
-        });
-        if(pendAdded > 0) added += pendAdded;
-      }
-    } catch(e) {
-      console.log('Pending fetch skipped:', e);
     }
 
     save();
     renderAll();
 
     const totalLocal = S.transactions.length;
-    setSyncStatus(`✅ Synced! ${added} new + ${totalLocal} total transactions`, 'ok');
+    const pendingLeft = (S.pending || []).length;
+    setSyncStatus(`✅ Synced! ${added} new + ${totalLocal} total transactions` + (pendingLeft > 0 ? ` · ${pendingLeft} pending` : ''), 'ok');
     if(added > 0) showFetchBanner(added);
 
   } catch(e) {
@@ -1372,7 +1356,6 @@ async function pullFromSheets(){
     setSyncStatus('❌ Network error: ' + e.message, 'err');
   }
 }
-
 async function pushAllToSheets(){
   if(!GMAIL_ENDPOINT || GMAIL_ENDPOINT.includes('PASTE_YOUR')){
     alert('⚠️ Set your GMAIL_ENDPOINT first in the code!');
