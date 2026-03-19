@@ -1312,10 +1312,29 @@ async function pullFromSheets(){
     const localMsgIds = new Set(S.transactions.map(t => t.msgId).filter(Boolean));
     let added = 0;
 
-    sheetTxns.forEach(t => {
+        sheetTxns.forEach(t => {
       if(!t || !t.id || t.id === 'null' || t.id === '') return;
       if(localIds.has(t.id)) return;
       if(t.msgId && localMsgIds.has(t.msgId)) return;
+      
+      // If uncategorized, add to pending queue instead
+      if(!t.category || t.category === 'uncategorized') {
+        const pendingMsgIds = new Set((S.pending || []).map(p => p.msgId));
+        if(!pendingMsgIds.has(t.msgId)) {
+          S.pending = S.pending || [];
+          S.pending.push({
+            id: t.id,
+            msgId: t.msgId || '',
+            merchant: String(t.merchant || 'Unknown'),
+            amount: parseFloat(t.amount) || 0,
+            bank: String(t.bank || ''),
+            date: t.date || new Date().toISOString()
+          });
+          added++;
+        }
+        return;
+      }
+      
       S.transactions.push({
         id: String(t.id || ''),
         merchant: String(t.merchant || 'Unknown'),
