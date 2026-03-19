@@ -1402,12 +1402,18 @@ handleUrlParams();
 renderAll();
 // Auto-fetch from Gmail on every app open
 fetchFromGmail();
-// Auto-pull from Sheets if localStorage is empty (fresh PWA install)
-if(S.transactions.length === 0 && GMAIL_ENDPOINT && !GMAIL_ENDPOINT.includes('https://script.google.com/macros/s/AKfycbzWb9SGDr3Wxej-B1W9xUHU0j7dV6ZweTb1KIdIM5DNzk--rMr2huBQsYP1rH-hCo9t/exec')){
+// Auto-pull from Sheets on EVERY app open (keeps browser & PWA in sync)
+if(GMAIL_ENDPOINT && !GMAIL_ENDPOINT.includes('PASTE_YOUR')){
   pullFromSheets();
 }
-// Also re-fetch every 10 minutes while app is open
-setInterval(fetchFromGmail, 10 * 60 * 1000);
+
+// Re-sync every 10 minutes while app is open
+setInterval(function(){
+  fetchFromGmail();
+  if(GMAIL_ENDPOINT && !GMAIL_ENDPOINT.includes('PASTE_YOUR')){
+    pullFromSheets();
+  }
+}, 10 * 60 * 1000);
 
 </script>
 <!-- Add / Edit Category -->
