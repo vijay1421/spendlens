@@ -90,6 +90,8 @@ body::before{content:'';position:fixed;inset:0;
 /* ── CAT CARDS (with optional budget bar) ── */
 .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:13px 14px;margin-bottom:8px;}
 .cat-card.has-budget{border-color:rgba(124,106,247,0.2);}
+.cat-card .cb-expanded{margin-top:0;border-top:none;}
+.cat-card .cb-expanded.open{margin-top:10px;border-top:1px solid var(--border);padding-top:8px;}
 .cc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
 .cc-left{display:flex;align-items:center;gap:9px;}
 .cc-icon{font-size:18px;}
@@ -506,6 +508,13 @@ function save(){
   S.categories=CATS;
   localStorage.setItem('sl9',JSON.stringify(S));
 }
+
+function toggleCat(id){
+  if(expandedCats.has(id)) expandedCats.delete(id);
+  else expandedCats.add(id);
+  renderCurrent();
+}
+  
 function clearAll(){
   const c={};BANKS_CFG.forEach(b=>c[b.id]=b.cycleDay);
   S={transactions:[],budgets:{...DEFAULT_BUDGETS},pending:[],cycles:c};
